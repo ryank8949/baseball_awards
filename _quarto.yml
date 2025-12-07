@@ -8,11 +8,10 @@ execute:
   message: false
 
 book:
-  title: "YOUR PROJECT TITLE"
+  title: "Baseball Awards"
   author:
-    - AUTHOR1 (UNI1)
-    - AUTHOR2 (UNI2)
-  repo-url: https://github.com/YOUR_GITHUB_ACCOUNT/REPO_NAME
+    - Ryan Kapoor (rk3191)
+  repo-url: https://github.com/ryank8949/baseball_awards
   date: today
   page-footer:
     right: |
