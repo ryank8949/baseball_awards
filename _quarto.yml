@@ -8,7 +8,7 @@ execute:
   message: false
 
 book:
-  title: "Baseball Awards"
+  title: "Baseball Awards Analysis"
   author:
     - Ryan Kapoor (rk3191)
   repo-url: https://github.com/ryank8949/baseball_awards
