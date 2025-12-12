@@ -1,1 +1,465 @@
 # Results
+When it comes to comprehensively evaluating a player's contributions, there is no statistic more referenced than wins above replacement (WAR). WAR uses a formula of several other statistics in an attempt to quantify a player's total contribution to their team. A baseline value of WAR is 0, which represents a "replacement level player". A replacement level player is a prototypical player who is easily acquirable and can be used to quickly replace other players. It is important to distinguish between a replacement level player and an average player. An average player in the MLB has a WAR above 0, coalescing around 2. WAR has been a mainstream statistic for a little over 10 years, and I am interested to see its impact on the awards voting over time.
+
+### Question 1:
+Has the popularization of WAR impacted the frequency in which the player with the highest WAR wins Most Valuable player or Cy Young?
+
+
+To note, there are two different calculations of WAR that are regularly referenced, bWAR and fWAR. While the underlying formulas are different, the results of these calculations are often similar. The pybaseball package sources data from FanGraphs which uses fWAR.
+
+### Importing Data
+```{r}
+library(ggplot2)
+library(dplyr)
+
+mvp_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/mvp_hitting_dataset.csv')
+mvp_df_h <- mvp_df %>% 
+  filter(!is.na(AVG)) # Filtering out pitchers in the MVP dataset
+
+cy_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/cy_young_pitching_dataset_rev.csv')
+
+```
+
+```{r}
+glimpse(mvp_df_h)
+```
+
+```{r fig.width=10, fig.height=8}
+library(dplyr)
+library(ggplot2)
+
+# Build AL plotting data, including period_label
+plot_df_AL <- mvp_df_h %>%
+  mutate(
+    year_num = as.integer(yearID),
+
+    # define 20-year periods starting from 1911
+    period_start = floor((year_num - 1911) / 20) * 20 + 1911,
+    period_end   = period_start + 19L,
+    period_label = paste0(period_start, "–", period_end),
+
+    WAR.leader.flag = as.factor(WAR.leader.flag),
+    year_f = factor(year_num)
+  ) %>%
+  filter(lgID == "AL")
+
+# Custom colors
+highlight_colors <- c("0" = "gray70", "1" = "#1f78b4")
+
+ggplot(plot_df_AL, aes(x = WAR, y = year_f, fill = WAR.leader.flag)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(
+    name   = "WAR Leader",
+    values = highlight_colors,
+    labels = c("No", "Yes")
+  ) +
+  labs(
+    title    = "AL MVP Winners and Their WAR by Season",
+    subtitle = "Highlighted bars indicate MVP was also league WAR leader",
+    x = "WAR",
+    y = "Year"
+  ) +
+  facet_wrap(~ period_label, scales = "free_y") +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position      = "bottom",
+    panel.grid.major.y   = element_blank(),
+    axis.text.y          = element_text(size = 8)
+  )
+```
+
+
+```{r fig.width=10, fig.height=8}
+plot_df_NL <- mvp_df_h %>%
+  mutate(
+    year_num = as.integer(yearID),
+    period_start = floor((year_num - 1911) / 20) * 20 + 1911,
+    period_end   = period_start + 19L,
+    period_label = paste0(period_start, "–", period_end),
+    WAR.leader.flag = as.factor(WAR.leader.flag),
+    year_f = factor(year_num)
+  ) %>%
+  filter(lgID == "NL")
+
+ggplot(plot_df_NL, aes(x = WAR, y = year_f, fill = WAR.leader.flag)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(
+    name   = "WAR Leader",
+    values = highlight_colors,
+    labels = c("No", "Yes")
+  ) +
+  labs(
+    title    = "NL MVP Winners and Their WAR by Season",
+    subtitle = "Highlighted bars indicate MVP was also league WAR leader",
+    x = "WAR",
+    y = "Year"
+  ) +
+  facet_wrap(~ period_label, scales = "free_y") +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position      = "bottom",
+    panel.grid.major.y   = element_blank(),
+    axis.text.y          = element_text(size = 8)
+  )
+```
+
+
+
+The graphs show that the prediction power of WAR on MVP winning grew significantly in the late-2000s. From that point on, the MVP is the WAR leader for a majority of the years. To note, I have seen a similar published online, although I am not able to locate it at the moment. However, I believe that the year range was much more limited for that graph, perhaps 2000-2017.
+
+```{r}
+library(dplyr)
+
+mvp_decade <- mvp_df_h %>%
+  mutate(
+    decade_start = floor(yearID / 10) * 10,
+    decade_label = paste0(decade_start, "s"),
+    war_leader = case_when(
+      is.logical(WAR.leader.flag) ~ WAR.leader.flag,
+      TRUE ~ WAR.leader.flag %in% c(1, "1")
+    )
+  ) %>%
+  group_by(decade_start, decade_label) %>%
+  summarise(
+    mvp_war_leaders = sum(war_leader, na.rm = TRUE),
+    total_mvps = n(),
+    pct_war_leader = mvp_war_leaders / total_mvps,
+    .groups = "drop"
+  ) %>%
+  arrange(decade_start)
+
+head(mvp_decade, 5)
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(mvp_decade, aes(x = factor(decade_label, levels = decade_label),
+                       y = pct_war_leader)) +
+  geom_col(fill = "#1f78b4") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title = "Percentage of MVPs Who Also Led Their League in WAR by Decade",
+    x = "Decade",
+    y = "Percentage"
+  ) +
+  theme_minimal(base_size = 14)
+
+```
+This graph counts MVPs who also led their league in WAR and aggregates by decade. The 2010s and 2020s are the two decades with the highest percentages of MVPs who also led the league in WAR.
+
+```{r}
+glimpse(cy_df)
+```
+
+
+```{r fig.width=10, fig.height=8}
+library(dplyr)
+library(ggplot2)
+
+plot_df_AL_cy <- cy_df %>%
+  mutate(
+    year_num = as.integer(yearID),
+
+    # --- define 20-year periods starting from 1956 ---
+    period_start = floor((year_num - 1956) / 20) * 20 + 1956,
+    period_end   = period_start + 19L,
+    period_label = paste0(period_start, "–", period_end),
+
+    WAR.leader.flag = as.factor(WAR.leader.flag),
+    year_f = factor(year_num)
+  ) %>%
+  filter(lgID == "AL")
+
+highlight_colors <- c("0" = "gray70", "1" = "#1f78b4")
+
+ggplot(plot_df_AL_cy, aes(x = WAR, y = year_f, fill = WAR.leader.flag)) +
+  geom_col(width = 0.7) +
+  scale_fill_manual(
+    name   = "WAR Leader",
+    values = highlight_colors,
+    labels = c("No", "Yes")
+  ) +
+  labs(
+    title    = "AL Cy Young Winners and Their WAR by Season",
+    subtitle = "Highlighted bars indicate Cy Young winner was also league WAR leader",
+    x = "WAR",
+    y = "Year"
+  ) +
+  facet_wrap(~ period_label, scales = "free_y") +
+  theme_minimal(base_size = 14) +
+  theme(
+    legend.position      = "bottom",
+    panel.grid.major.y   = element_blank(),
+    axis.text.y          = element_text(size = 8)
+  )
+```
+
+```{r}
+library(dplyr)
+
+cy_decade <- cy_df %>%
+  mutate(
+    decade_start = floor(yearID / 10) * 10,
+    decade_label = paste0(decade_start, "s"),
+    war_leader = case_when(
+      is.logical(WAR.leader.flag) ~ WAR.leader.flag,
+      TRUE ~ WAR.leader.flag %in% c(1, "1")
+    )
+  ) %>%
+  group_by(decade_start, decade_label) %>%
+  summarise(
+    cy_war_leaders  = sum(war_leader, na.rm = TRUE),
+    total_cy_awards = n(),
+    pct_war_leader  = cy_war_leaders / total_cy_awards,
+    .groups = "drop"
+  ) %>%
+  arrange(decade_start)
+
+head(cy_decade, 5)
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(cy_decade,
+       aes(x = factor(decade_label, levels = decade_label),
+           y = pct_war_leader)) +
+  geom_col(fill = "#1f78b4") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  labs(
+    title = "Percentage of Cy Young Winners Who Also Led Their League in WAR by Decade",
+    x = "Decade",
+    y = "Percentage"
+  ) +
+  theme_minimal(base_size = 14)
+
+```
+When it comes to Cy Young, there does not seem to be a pronounced shift towards WAR leaders in recent decades. The 1990s and 2000s had a higher proportion of WAR-leading Cy Young winners than the 2010s and 2020s. While there are always star players, there were some all-time elite pitchers who were at their peaks during the late 1990s and early 2000s. Randy Johnson, Pedro Martinez, and Roger Clemens combined for 14 Cy Young awards between 1995 and 2004. These singular talents may have accumulated a relatively outsized WAR for a given season, which could be why the 1990s and 2000s have the highest proportion of WAR-leading Cy Young award winners.
+
+To note, WAR leader is calculated within the population of pitchers only. The same applies for the hitter/MVP analysis above. Pitchers are not ranked against hitters and vice versa. Shohei Ohtani may be an exception, as he plays both pitcher and hitter.
+
+### Individual Statistics
+WAR attempts to summarize the effectiveness of a player in a single metric, which on the surface is a very appealing statistic. It is now clear that voters have shifted their preferences or criteria for MVP voting. For Cy Young, this is still unclear. However, both MVP and Cy Young voting remain a holistic process, where voters consider a variety of statistics.
+
+### Question 2:
+Which individual statistics are drivers of the MVP and Cy Young award, and how has this changed over time?
+
+```{r}
+
+library(dplyr)
+
+hitting_era_df <- hitting_df %>%
+  mutate(
+    decade_start = floor(yearID / 20) * 20,
+    decade_label = paste0(decade_start, "s"),
+
+    MVP_flag = ifelse(awardID == "Most Valuable Player",
+                      "MVP Winner",
+                      "Non-MVP")
+  )
+
+```
+
+
+```{r fig.width=12, fig.height=8}
+library(dplyr)
+library(ggplot2)
+
+# Build era + MVP flag dataset (if you haven't already)
+hitting_era_df <- hitting_df %>%
+  mutate(
+    decade_start = floor(yearID / 20) * 20,
+    decade_label = paste0(decade_start, "s"),
+    MVP_flag = ifelse(awardID == "Most Valuable Player",
+                      "MVP Winner",
+                      "Non-MVP")
+  ) %>%
+  filter(!is.na(SLG.))   # drop rows without SLG_plus
+
+ggplot(hitting_era_df,
+       aes(x = SLG., fill = MVP_flag, color = MVP_flag)) +
+  geom_density(alpha = 0.35, linewidth = 0.9) +
+  facet_wrap(~ decade_label, scales = "free_y") +
+  scale_fill_manual(values = c("Non-MVP" = "gray70", "MVP Winner" = "#1f78b4")) +
+  scale_color_manual(values = c("Non-MVP" = "gray40", "MVP Winner" = "#084c8d")) +
+  labs(
+    title = "SLG+ Distributions for MVP Winners vs Non-MVP Hitters by Decade",
+    subtitle = "Bell curves show how slugging ability relates to MVP voting across eras",
+    x = "SLG+",
+    y = "Density",
+    fill = "MVP Status",
+    color = "MVP Status"
+  ) +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "bottom",
+    strip.text = element_text(size = 12, face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+
+```
+This visualization attempts to show the density curves of Slugging Percentage+ for MVP winners vs non-MVP winners. Slugging Percentage attempts to measure a hitter's power (i.e., the ability to get extra-base hits such as home runs and doubles). The "+" represents a normalization to 100 to represent the average for a given year, with adjustments for ballpark and for the league. As an example, a player with a Slugging Percentage+ of 125 has a 25% better slugging percentage than league-average for a given year. This is a powerful way to compare power relative to the rest of the league over time. The graph shows that through the 1930s, MVP winners often had a wide range of slugging percentage. This means that hitters who did not hit for power had a meaningful chance of winning MVP. Over time, the slugging percentage distributions for MVP winners narrowed while the rest of the league stayed fairly static, although this is expected for a stat that normalizes for historical average. By the 1980s, the distribution shows that it was unlikely that a player with a slugging percentage+ below 110 would be able to win MVP. By the 2020s, the distribution of MVP winners has shifted even more, with that boundary nearing 130. This graph shows that power has become a very important statistic for MVP consideration. Hitters like Aaron Judge and Shohei Ohtani come to mind, who have won multiple MVPs each for their impressive show of power.
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+# Stats you want to evaluate
+candidate_stats <- c("WAR", "AVG.", "SLG.", "wRC.", "ISO.")
+stats_avail <- intersect(candidate_stats, names(hitting_df))
+
+# Force period bins to start at 1900
+period_base <- 1900
+
+ranked <- hitting_df %>%
+  mutate(
+    year_num = as.integer(yearID),
+
+    # FORCE 20-year bins starting at 1900
+    period_start = floor((year_num - period_base) / 20) * 20 + period_base,
+    period_end   = period_start + 19L,
+    period_label = paste0(period_start, "–", period_end),
+
+    # Rank players within league-year for each stat
+    # earlier code unchanged
+  ) %>%
+  group_by(yearID, lgID) %>%
+  mutate(
+    across(
+      all_of(stats_avail),
+      ~ min_rank(desc(.x)),
+      .names = "rank_{.col}"
+    )
+  ) %>%
+  ungroup()
+
+```
+
+```{r}
+mvp_ranked <- ranked %>%
+  filter(awardID == "Most Valuable Player")
+
+mvp_long <- mvp_ranked %>%
+  select(yearID, lgID, period_label, starts_with("rank_")) %>%
+  pivot_longer(
+    cols = starts_with("rank_"),
+    names_to = "stat",
+    values_to = "rank"
+  ) %>%
+  mutate(
+    stat = sub("^rank_", "", stat),
+    rank_bin = case_when(
+      rank == 1       ~ "Top 1",
+      rank <= 3       ~ "Top 3",
+      rank <= 5       ~ "Top 5",
+      TRUE            ~ "Outside Top 5"
+    ),
+    rank_bin = factor(rank_bin, levels = c("Top 1", "Top 3", "Top 5", "Outside Top 5"))
+  )
+```
+
+```{r}
+mvp_heat_period <- mvp_long %>%
+  group_by(period_label, stat, rank_bin) %>%
+  summarise(n = n(), .groups = "drop") %>%
+  group_by(period_label, stat) %>%
+  mutate(
+    total_mvp = sum(n),
+    pct = n / total_mvp
+  ) %>%
+  ungroup() %>%
+  mutate(stat = factor(stat, levels = stats_avail))
+
+```
+
+```{r fig.width=12, fig.height=8}
+library(ggplot2)
+library(scales)
+
+ggplot(mvp_heat_period,
+       aes(x = stat, y = rank_bin, fill = pct)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(
+    name = "Share of MVPs",
+    labels = percent_format(accuracy = 1),
+    low = "white",
+    high = "#1f78b4"
+  ) +
+  labs(
+    title = "MVP Leaderboard Performance Across Baseball Eras",
+    subtitle = "20-year bins starting at 1900",
+    x = "Statistic",
+    y = "Ranking Bin"
+  ) +
+  facet_wrap(~ period_label, ncol = 2) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    strip.text = element_text(face = "bold", size = 12)
+  )
+
+```
+Overall, the earlier decades seem to be colored more homogenously than recent decades. This may mean that a heaview emphasis is places on these sets of statistics.
+
+```{r fig.width=12, fig.height=8}
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+pitching_cy <- pitching_df %>%
+  # Cy Young era only
+  filter(yearID >= 1956) %>%
+  mutate(
+    # Award status: Cy Young winner vs everyone else
+    award_flag = ifelse(awardID == "Cy Young Award",
+                        "Cy Young Winner",
+                        "Non-winner"),
+    # Win percentage
+    win_pct = W / (W + L),
+    # Decade labels: 1950s, 1960s, 1970s, ...
+    decade_start = floor(yearID / 10) * 10,
+    decade_label = paste0(decade_start, "s")
+  ) %>%
+  filter(!is.na(win_pct), is.finite(win_pct))
+
+ggplot(
+  pitching_cy,
+  aes(x = win_pct, fill = award_flag, color = award_flag)
+) +
+  geom_density(
+    alpha    = 0.35,
+    linewidth = 0.9,
+    adjust   = 1.2,
+    na.rm    = TRUE
+  ) +
+  facet_wrap(~ decade_label, scales = "free_y") +
+  scale_x_continuous(
+    labels = percent_format(accuracy = 1),
+    limits = c(0, 1)
+  ) +
+  scale_fill_manual(
+    values = c("Non-winner" = "gray70", "Cy Young Winner" = "#1f78b4"),
+    name   = "Award Status"
+  ) +
+  scale_color_manual(
+    values = c("Non-winner" = "gray40", "Cy Young Winner" = "#084c8d"),
+    name   = "Award Status"
+  ) +
+  labs(
+    title    = "Win Percentage Distributions for Cy Young Winners vs Non-winners",
+    subtitle = "Density curves by decade (1950s–present),
+    x        = "Win Percentage",
+    y        = "Density"
+  ) +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position  = "bottom",
+    strip.text       = element_text(size = 12, face = "bold"),
+    panel.grid.minor = element_blank()
+  )
+
+```
+I was interested in analyzing wins as it pertains to the Cy Young award. While wins are correlated with effecitve pitching, a lot of what happens in a game is outside of a pitcher's control. The question I asked myself is, "As analytics have become more advanced, have wins had less meaning because they don't correlate as strongly to pitcher performance as other statistics?" A great example is Paul Skenes' record from this past season. As a pitcher on the Pirates, he pitched to a record of 10 wins and 10 losses. He won the Cy Young award even though he lost as many games as he won. The voters looked past the poor team performance that dragged down his win potential and rewarded Skenes for his outstanding numbers otherwise. I was surprised to see that wins are still a relatively strong predictor of the Cy Young award. Perhaps winning percentage correlate strongly enough with other meaningful pitching metrics that there isn't much of a difference over time, even though wins may have less weight than they once did.
