@@ -23,4 +23,81 @@ https://baseballsavant.mlb.com/statcast_search
 
 
 ## Missing value analysis
+For each player, there are certain statistics which should always be present. Statistics such as name, games played, hits, home runs, batting average, strikeouts, and innings pitched should be complete. These represent some of the foundational metrics of baseball. There are also more advanced statistics created over time that incorporate these foundational metrics in formulas, such as OBP (on-base percentage) and SLG (slugging percentage). Since the oldest statistics can be referenced in these formulas, these metrics should be complete too. There are modern statistics that were introduced in 2015 with the implementation of Statcast, MLB's advanced player and ball tracking system. These values, such as EV (exit velocity), LA (Launch Angle), and HardHit are missing for any records that predate 2015. This is because the technology to track these metrics was not implemented.
+
+With the above said, I created the main dataset via a join into the awards database, which contains awards for both hitters and pitchers. As a result, there are pitchers and hitters that appear across datasets. A pitcher in the hitter dataset will have all N/A values and a hitter in the pitcher dataset will have all N/A values.
+
 There were several MVP winners for which the WAR leader flag was not properly calculated (they displayed as NA instead of 0 or 1). I manually adjusted these records.
+
+```{r}
+mvp_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/mvp_hitting_dataset.csv')
+mvp_df_h <- mvp_df %>% 
+  filter(!is.na(AVG)) # Filtering out pitchers in the MVP dataset
+
+cy_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/cy_young_pitching_dataset_rev.csv')
+
+hitting_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/hitting_dataset_all.csv')
+pitching_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/pitching_dataset_all.csv')
+```
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+missing_summary <- hitting_df %>%
+  summarise(across(everything(), ~ mean(is.na(.)))) %>% 
+  pivot_longer(everything(), names_to = "variable", values_to = "pct_missing") %>%
+  arrange(desc(pct_missing))
+```
+
+```{r}
+library(ggplot2)
+library(scales)
+
+ggplot(missing_summary, aes(x = pct_missing, y = reorder(variable, pct_missing))) +
+  geom_col(fill = "#1f78b4") +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Proportion of Missing Values by Variable: Hitter Dataset",
+    x = "Percent Missing",
+    y = "Variable"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.y = element_text(size = 8)
+  )
+
+```
+The graph shows that values are relatively uniformly missing. This is because stats are missing for hitters in the pitcher dataset and vice versa, as was mentioned above.
+
+```{r}
+library(dplyr)
+library(tidyr)
+
+pitching_missing_summary <- pitching_df %>%
+  summarise(across(everything(), ~ mean(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "pct_missing") %>%
+  arrange(desc(pct_missing))
+```
+
+```{r}
+library(ggplot2)
+library(scales)
+
+ggplot(pitching_missing_summary, aes(x = pct_missing, y = reorder(variable, pct_missing))) +
+  geom_col(fill = "#1f78b4") +
+  scale_x_continuous(labels = percent_format(accuracy = 1)) +
+  labs(
+    title = "Proportion of Missing Values by Variable (Pitching Dataset)",
+    x = "Percent Missing",
+    y = "Variable"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.y = element_text(size = 8)
+  )
+```
+The missing value columns mirror each other, which is expected given the way which this dataset was compiled.
+
+
