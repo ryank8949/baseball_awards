@@ -1,7 +1,7 @@
 # Results
 When it comes to comprehensively evaluating a player's contributions, there is no statistic more referenced than wins above replacement (WAR). WAR uses a formula of several other statistics in an attempt to quantify a player's total contribution to their team. A baseline value of WAR is 0, which represents a "replacement level player". A replacement level player is a prototypical player who is easily acquirable and can be used to quickly replace other players. It is important to distinguish between a replacement level player and an average player. An average player in the MLB has a WAR above 0, coalescing around 2. WAR has been a mainstream statistic for a little over 10 years, and I am interested to see its impact on the awards voting over time.
 
-### Question 1:
+### WAR Impact Question:
 Has the popularization of WAR impacted the frequency in which the player with the highest WAR wins Most Valuable player or Cy Young?
 
 
@@ -17,6 +17,9 @@ mvp_df_h <- mvp_df %>%
   filter(!is.na(AVG)) # Filtering out pitchers in the MVP dataset
 
 cy_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/cy_young_pitching_dataset_rev.csv')
+
+hitting_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/hitting_dataset_all.csv')
+pitching_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/pitching_dataset_all.csv')
 
 ```
 
@@ -242,7 +245,7 @@ To note, WAR leader is calculated within the population of pitchers only. The sa
 ### Individual Statistics
 WAR attempts to summarize the effectiveness of a player in a single metric, which on the surface is a very appealing statistic. It is now clear that voters have shifted their preferences or criteria for MVP voting. For Cy Young, this is still unclear. However, both MVP and Cy Young voting remain a holistic process, where voters consider a variety of statistics.
 
-### Question 2:
+### Individual Statistics Question:
 Which individual statistics are drivers of the MVP and Cy Young award, and how has this changed over time?
 
 ```{r}
@@ -450,7 +453,7 @@ ggplot(
   ) +
   labs(
     title    = "Win Percentage Distributions for Cy Young Winners vs Non-winners",
-    subtitle = "Density curves by decade (1950s–present),
+    subtitle = "Density curves by decade (1950s–present)",
     x        = "Win Percentage",
     y        = "Density"
   ) +

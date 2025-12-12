@@ -30,6 +30,11 @@ With the above said, I created the main dataset via a join into the awards datab
 There were several MVP winners for which the WAR leader flag was not properly calculated (they displayed as NA instead of 0 or 1). I manually adjusted these records.
 
 ```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+
 mvp_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/mvp_hitting_dataset.csv')
 mvp_df_h <- mvp_df %>% 
   filter(!is.na(AVG)) # Filtering out pitchers in the MVP dataset
@@ -42,8 +47,6 @@ pitching_df <- read.csv('/Users/ryan/Desktop/STAT5702GR/final_project/pitching_d
 
 
 ```{r}
-library(dplyr)
-library(tidyr)
 
 missing_summary <- hitting_df %>%
   summarise(across(everything(), ~ mean(is.na(.)))) %>% 
@@ -52,8 +55,6 @@ missing_summary <- hitting_df %>%
 ```
 
 ```{r}
-library(ggplot2)
-library(scales)
 
 ggplot(missing_summary, aes(x = pct_missing, y = reorder(variable, pct_missing))) +
   geom_col(fill = "#1f78b4") +
@@ -72,8 +73,6 @@ ggplot(missing_summary, aes(x = pct_missing, y = reorder(variable, pct_missing))
 The graph shows that values are relatively uniformly missing. This is because stats are missing for hitters in the pitcher dataset and vice versa, as was mentioned above.
 
 ```{r}
-library(dplyr)
-library(tidyr)
 
 pitching_missing_summary <- pitching_df %>%
   summarise(across(everything(), ~ mean(is.na(.)))) %>%
@@ -82,8 +81,6 @@ pitching_missing_summary <- pitching_df %>%
 ```
 
 ```{r}
-library(ggplot2)
-library(scales)
 
 ggplot(pitching_missing_summary, aes(x = pct_missing, y = reorder(variable, pct_missing))) +
   geom_col(fill = "#1f78b4") +
