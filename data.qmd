@@ -68,7 +68,6 @@ ggplot(missing_summary, aes(x = pct_missing, y = reorder(variable, pct_missing))
   theme(
     axis.text.y = element_text(size = 8)
   )
-
 ```
 The graph shows that values are relatively uniformly missing. This is because stats are missing for hitters in the pitcher dataset and vice versa, as was mentioned above.
 

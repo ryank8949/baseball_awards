@@ -113,7 +113,6 @@ ggplot(plot_df_NL, aes(x = WAR, y = year_f, fill = WAR.leader.flag)) +
 The graphs show that the prediction power of WAR on MVP winning grew significantly in the late-2000s. From that point on, the MVP is the WAR leader for a majority of the years. To note, I have seen a similar published online, although I am not able to locate it at the moment. However, I believe that the year range was much more limited for that graph, perhaps 2000-2017.
 
 ```{r}
-
 mvp_decade <- mvp_df_h |>
   mutate(
     decade_start = floor(yearID / 10) * 10,
