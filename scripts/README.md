@@ -1,0 +1,1 @@
+Some of the cells early on in each Jupyter Notebook show an error. This is because the Kernel was reset and those specific cells were run without the large query from pybaseball that was previously done and saved to a .csv. If the code is run end-to-end those errors should not appear.
