@@ -7,7 +7,6 @@ Has the popularization of WAR impacted the frequency in which the player with th
 
 To note, there are two different calculations of WAR that are regularly referenced, bWAR and fWAR. While the underlying formulas are different, the results of these calculations are often similar. The pybaseball package sources data from FanGraphs which uses fWAR.
 
-### Importing Data
 ```{r}
 library(ggplot2)
 library(dplyr)
