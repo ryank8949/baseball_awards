@@ -39,6 +39,7 @@ plot_df_AL <- mvp_df_h |>
     # define 20-year periods starting from 1911
     period_start = floor((year_num - 1911) / 20) * 20 + 1911,
     period_end   = period_start + 19L,
+    period_end = pmin(period_end, 2024),
     period_label = paste0(period_start, "–", period_end),
 
     WAR.leader.flag = as.factor(WAR.leader.flag),
@@ -78,6 +79,7 @@ plot_df_NL <- mvp_df_h |>
     year_num = as.integer(yearID),
     period_start = floor((year_num - 1911) / 20) * 20 + 1911,
     period_end   = period_start + 19L,
+    period_end = pmin(period_end, 2024),
     period_label = paste0(period_start, "–", period_end),
     WAR.leader.flag = as.factor(WAR.leader.flag),
     year_f = factor(year_num)
